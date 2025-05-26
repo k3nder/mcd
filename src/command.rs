@@ -11,7 +11,9 @@ use crate::util::{resolve_rules_feat, FillingUtil};
 pub struct Command {
     pub fill: FillingUtil,
     pub game: Vec<String>,
-    pub jvm: Vec<String>
+    pub jvm: Vec<String>,
+    pub stdout: fn(String),
+    pub stderr: fn(String),
 }
 impl Command {
     pub fn new(client: &Client, data: HashMap<String, String>, options: HashMap<String, bool>) -> Self {
@@ -38,7 +40,9 @@ impl Command {
         Command {
             fill,
             game,
-            jvm
+            jvm,
+            stdout: |f| {},
+            stderr: |f| {}
         }
 
     }
@@ -82,6 +86,12 @@ impl Command {
     pub fn build_jvm_args(&self) -> Vec<String> {
         Self::build_args(&self, &self.jvm)
     }
+    pub fn stdout(mut self, stdout: fn(String)) {
+        self.stdout = stdout;
+    }
+    pub fn stderr(mut self, stderr: fn(String)) {
+        self.stderr = stderr;
+    }
     pub fn execute(self, java: String, jvm: Vec<String>) {
         let mut args = self.build_jvm_args();
         let mut game = self.build_game_args();
@@ -109,12 +119,12 @@ impl Command {
                 // Leer la salida del proceso hijo de manera asíncrona
                 let reader = BufReader::new(stdout);
                 for line in reader.lines() {
-                    println!("{}", line.unwrap());
+                    (self.stdout)(line.unwrap())
                 }
 
                 let reader = BufReader::new(stderr);
                 for line in reader.lines() {
-                    println!("{}", line.unwrap());
+                    (self.stderr)(line.unwrap())
                 }
 
                 // Esperar a que el proceso hijo termine
