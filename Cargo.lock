@@ -1341,15 +1341,18 @@ dependencies = [
 ]
 
 [[package]]
-name = "mcdu"
+name = "mcd"
 version = "0.1.0"
 dependencies = [
+ "anyhow",
  "dwldutil",
+ "env_logger",
  "log",
  "rayon",
  "serde",
  "serde_json",
  "thiserror 2.0.12",
+ "url",
 ]
 
 [[package]]
