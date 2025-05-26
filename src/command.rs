@@ -14,6 +14,7 @@ pub struct Command {
     pub jvm: Vec<String>,
     pub stdout: fn(String),
     pub stderr: fn(String),
+    blocking: bool,
 }
 impl Command {
     pub fn new(client: &Client, data: HashMap<String, String>, options: HashMap<String, bool>) -> Self {
@@ -42,7 +43,8 @@ impl Command {
             game,
             jvm,
             stdout: |f| {},
-            stderr: |f| {}
+            stderr: |f| {},
+            blocking: true,
         }
 
     }
@@ -86,11 +88,21 @@ impl Command {
     pub fn build_jvm_args(&self) -> Vec<String> {
         Self::build_args(&self, &self.jvm)
     }
-    pub fn stdout(mut self, stdout: fn(String)) {
+    pub fn stdout(mut self, stdout: fn(String)) -> Self {
         self.stdout = stdout;
+        self
     }
-    pub fn stderr(mut self, stderr: fn(String)) {
+    pub fn stderr(mut self, stderr: fn(String)) -> Self {
         self.stderr = stderr;
+        self
+    }
+    pub fn non_block(mut self) -> Self {
+        self.blocking = false;
+        self
+    }
+    pub fn with_blocking(mut self, blocking: bool) -> Self {
+        self.blocking = blocking;
+        self
     }
     pub fn execute(self, java: String, jvm: Vec<String>) {
         let mut args = self.build_jvm_args();
@@ -128,6 +140,8 @@ impl Command {
                 }
 
                 // Esperar a que el proceso hijo termine
-                child.wait().unwrap();
+                if self.blocking {
+                    child.wait().unwrap();
+                }
     }
 }
