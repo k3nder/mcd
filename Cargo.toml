@@ -4,7 +4,7 @@ version = "0.1.0"
 edition = "2024"
 description = "Simple mc downloader"
 authors = ["k3nder <k3nder@outlook.es>"]
-license-file = "LICENCE.md"
+license-file = "LICENSE.md"
 
 [dependencies]
 dwldutil = { version = "2.0.2", features = ["decompress", "normal_zip", "gzip"] }
