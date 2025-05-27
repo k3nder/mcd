@@ -1,6 +1,6 @@
 use std::{fs, path::Path};
 
-use dwldutil::{DLFile, DLHashes, Downloader};
+use dwldutil::{cas::DLStorage, DLFile, DLHashes, Downloader};
 
 use crate::{api::{assets::Assets, client::Client}, errors::FetchError};
 
@@ -27,8 +27,17 @@ impl<'a> ResourceUtil<'a> {
             Ok(serde_json::from_str(&content.as_str())?)
     }
     pub fn fetch(&self, assets: &Assets, destination: &str) -> Result<Vec<DLFile>, FetchError> {
-        let obj_path: String = format!("{}/objects", destination);
-        //let storage = DLStorage::new(obj_path.as_str());
+        let obj_path_str = format!("{}/objects", destination);
+        let obj_path = Path::new(&obj_path_str);
+        if !obj_path.exists() {
+            fs::create_dir_all(obj_path)?;
+        }
+
+        let obj_path: String = match obj_path.canonicalize() {
+            Ok(path) => path.as_path().to_str().unwrap().to_owned(),
+            Err(e) => return Err(FetchError::CanonicalizingError(destination.to_owned())),
+        };
+        let storage = DLStorage::new(obj_path.as_str());
         let mut files = Vec::new();
             for (key, value) in &assets.objects {
                 let hash = &value.hash;
@@ -44,20 +53,10 @@ impl<'a> ResourceUtil<'a> {
                         .with_url(&url)
                         .with_path(&path)
                         .with_size(value.size)
-                        .with_hashes(DLHashes::new().sha1(hash));
-                        //.with_cas(storage.clone());
+                        .with_hashes(DLHashes::new().sha1(hash))
+                        .with_cas(storage.clone());
                     files.push(file);
                 }
-                let obj_path = format!("{}/{}/{}", obj_path, hash[0..2].to_owned(), hash.clone());
-                if !Path::new(&obj_path).exists() {
-                                    let file = DLFile::new()
-                                        .with_url(&url)
-                                        .with_path(&obj_path)
-                                        .with_size(value.size)
-                                        .with_hashes(DLHashes::new().sha1(hash));
-                                        //.with_cas(storage.clone());
-                                    files.push(file);
-                                }
             }
             Ok(files)
     }

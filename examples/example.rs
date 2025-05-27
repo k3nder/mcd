@@ -69,10 +69,11 @@ fn main() -> anyhow::Result<()> {
     data.insert("auth_xuid".to_owned(), "90".to_owned());
     data.insert("user_type".to_owned(), "normal".to_owned());
     data.insert("version_type".to_owned(), "vanilla".to_owned());
+    data.insert("user_properties".to_owned(), "".to_owned());
 
-    Command::new(&client, data, HashMap::new()).execute(
+    Command::new(&client, data, HashMap::new()).stdout(|f| println!("{}", f)).stderr(|f| println!("{}", f)).execute(
         format!(
-            "/home/kristian/Documentos/proyects/mcdu/mcdu/test/java/{}/bin/java",
+            "/home/kristian/Documentos/proyects/mcdu/mcd/test/java/{}/bin/java",
             java.id_of(client.java()).unwrap()
         ),
         vec![],

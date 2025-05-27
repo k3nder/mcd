@@ -112,6 +112,7 @@ impl Command {
         //args.push(self.fill.fill(String::from("${main_class}")).unwrap());
         args.append(&mut game);
 
+        debug!("JAVA: {}", java);
         debug!("{:?}", &args);
 
 
