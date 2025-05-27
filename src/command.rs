@@ -1,4 +1,4 @@
-use std::collections::HashMap;
+use std::collections::{HashMap, HashSet};
 use std::io::{BufRead, BufReader};
 use std::process::Stdio;
 
@@ -28,59 +28,7 @@ impl Command {
                     blocking: true,
                 }
     }
-    pub fn from_client(client: &Client, data: HashMap<String, String>, options: HashMap<String, bool>) -> Self {
 
-        let mut game: Vec<String> = Vec::new();
-        let mut jvm: Vec<String> = Vec::new();
-
-        jvm.push(String::from("-Djava.library.path=${natives_directory}"));
-        jvm.push(String::from("-cp"));
-        jvm.push(String::from("${classpath}"));
-        jvm.push(String::from("${main_class}"));
-
-        if let Some(args) = &client.minecraft_arguments {
-            let args: Vec<String> = args.split(" ").map(|f| f.to_owned()).collect();
-            game = args;
-        }
-        if let Some(args) = &client.arguments {
-            game = Self::parse(&args.game, &options);
-            jvm = Self::parse(&args.jvm, &options);
-            if !jvm.last().unwrap().eq(&String::from("${main_class}")) {
-                jvm.push(String::from("${main_class}"));
-            }
-        }
-        Self::from_args(game, jvm, data)
-    }
-    fn parse(arguments: &Vec<ArgumentValue>, options: &HashMap<String, bool>) -> Vec<String> {
-        let mut result = Vec::new();
-
-        for arg in arguments {
-            match arg {
-                ArgumentValue::Plain(str) => result.push(str.to_owned()),
-                ArgumentValue::Complex(complex_argument) => {
-                    if let Some(args) = Self::resolve_complex(complex_argument, options) {
-                        let mut args: Vec<String> = args.clone().iter().map(|f| f.to_owned()).collect();
-                        result.append(&mut args);
-                    }
-                },
-            }
-        }
-
-        result
-    }
-    fn resolve_complex(complex: &ComplexArgument, options: &HashMap<String, bool>) -> Option<Vec<String>> {
-        if !resolve_rules_feat(&complex.rules, options) {
-            return None;
-        }
-        let mut result = Vec::new();
-
-        match &complex.value {
-            crate::api::client::ValueField::Single(str) => result.push(str.to_owned()),
-            crate::api::client::ValueField::Multiple(items) => result.append(&mut items.clone()),
-        }
-
-        Some(result)
-    }
     fn build_args(&self, args: &Vec<String>) -> Vec<String> {
         args.par_iter()
             .map(|f| self.fill.fill(f.clone()).unwrap_or(f.clone())).collect()
@@ -110,7 +58,7 @@ impl Command {
     pub fn execute(self, java: String, jvm: Vec<String>) {
         let mut args = self.build_jvm_args();
         let mut game = self.build_game_args();
-        let mut extra = jvm;
+        let mut extra = jvm.clone();
         args.append(&mut extra);
         //args.push(self.fill.fill(String::from("${main_class}")).unwrap());
         args.append(&mut game);
@@ -149,3 +97,57 @@ impl Command {
                 }
     }
 }
+pub fn build_args(client: &Client, options: HashMap<String, bool>) -> (Vec<String>, Vec<String>) {
+
+    let mut game: Vec<String> = Vec::new();
+    let mut jvm: Vec<String> = Vec::new();
+
+    jvm.push(String::from("-Djava.library.path=${natives_directory}"));
+    jvm.push(String::from("-cp"));
+    jvm.push(String::from("${classpath}"));
+    jvm.push(String::from("${main_class}"));
+
+    if let Some(args) = &client.minecraft_arguments {
+        let args: Vec<String> = args.split(" ").map(|f| f.to_owned()).collect();
+        game = args;
+    }
+    if let Some(args) = &client.arguments {
+        game = parse(&args.game, &options);
+        jvm = parse(&args.jvm, &options);
+        if !jvm.last().unwrap().eq(&String::from("${main_class}")) {
+            jvm.push(String::from("${main_class}"));
+        }
+    }
+
+    (game, jvm)
+}
+fn parse(arguments: &Vec<ArgumentValue>, options: &HashMap<String, bool>) -> Vec<String> {
+        let mut result = Vec::new();
+
+        for arg in arguments {
+            match arg {
+                ArgumentValue::Plain(str) => result.push(str.to_owned()),
+                ArgumentValue::Complex(complex_argument) => {
+                    if let Some(args) = resolve_complex(complex_argument, options) {
+                        let mut args: Vec<String> = args.clone().iter().map(|f| f.to_owned()).collect();
+                        result.append(&mut args);
+                    }
+                },
+            }
+        }
+
+        result
+    }
+    fn resolve_complex(complex: &ComplexArgument, options: &HashMap<String, bool>) -> Option<Vec<String>> {
+        if !resolve_rules_feat(&complex.rules, options) {
+            return None;
+        }
+        let mut result = Vec::new();
+
+        match &complex.value {
+            crate::api::client::ValueField::Single(str) => result.push(str.to_owned()),
+            crate::api::client::ValueField::Multiple(items) => result.append(&mut items.clone()),
+        }
+
+        Some(result)
+    }

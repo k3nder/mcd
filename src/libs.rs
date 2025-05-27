@@ -1,3 +1,4 @@
+use std::collections::HashSet;
 use std::path::Path;
 
 use dwldutil::decompress::{DLDecompressionConfig, DecompressionMethod};
@@ -11,7 +12,7 @@ use crate::errors::FetchError;
 use crate::os::system::OperatingSystem;
 use crate::util::{fill, resolve_rules};
 
-struct MavenLibrary {
+pub struct MavenLibrary {
     pub group_id: String,
     pub artifact_id: String,
     pub version: String,
@@ -45,6 +46,9 @@ impl MavenLibrary {
     pub fn cl_name(&self) -> String {
         format!("{}-{}.jar", self.artifact_id, self.version)
     }
+    pub fn name(&self) -> String {
+        format!("{}/{}/{}/{}", self.group_id, self.artifact_id, self.version, self.cl_name())
+    }
 }
 
 pub struct LibsUtil;
@@ -57,23 +61,16 @@ pub fn fetch(&self,
     destination: &str,
     binary_destination: &str,
     client: &Client,
-) -> Result<Vec<DLFile>, FetchError> {
-
-    if Path::new(destination).exists() {
-        return Err(FetchError::PathAlredyExist(destination.to_owned()));
-    }
-    if Path::new(binary_destination).exists() {
-        return Err(FetchError::PathAlredyExist(binary_destination.to_owned()));
-    }
-
+) -> Result<(Vec<DLFile>, Vec<String>), FetchError> {
     let libs: &Vec<Library> = client.libraries.as_ref();
     let mut filtered_files: Vec<DLFile> = Vec::new();
+    let mut classpath: HashSet<String> = HashSet::new();
     for lib in libs {
         let natives = &&lib.clone().natives;
         if let Some(downloads) = &lib.clone().downloads {
             // artifact
             match Self::filter_artifact(destination, lib, downloads) {
-                Ok(file) => filtered_files.push(file),
+                Ok(file) => { classpath.insert(file.path.clone()); filtered_files.push(file); },
                 Err(e) => warn!("Error downloading artifact: {}", e),
             }
             // classfiers
@@ -84,14 +81,15 @@ pub fn fetch(&self,
             }
         } else {
             let lib = MavenLibrary::parse(lib.clone().name, lib.clone().url);
-            filtered_files.push(
-                DLFile::new()
-                    .with_url(lib.all_url().as_str())
-                    .with_path(format!("{}/{}", destination, lib.cl_name().as_str()).as_str())
-            );
+            let file = DLFile::new()
+                                .with_url(lib.all_url().as_str())
+                                .with_path(format!("{}/{}", destination, lib.name()).as_str());
+
+            //classpath.insert(file.path.clone());
+            filtered_files.push(file);
         }
     }
-    Ok(filtered_files)
+    Ok((filtered_files, classpath.into_iter().collect()))
 }
 
 fn filter_classifier(
@@ -119,7 +117,7 @@ fn add_classifier(destination: &str, binary_destination: &str, native: &&crate::
     let file = format!(
         "{}/{}",
         destination,
-        get_resource_name(&native.url).unwrap().as_str()
+        native.path
     );
     Ok(DLFile::new()
         .with_url(&native.url)
@@ -142,7 +140,7 @@ fn filter_artifact(
         let file = format!(
             "{}/{}",
             destination,
-            get_resource_name(&a.clone().url).unwrap().as_str()
+            a.path
         );
         if let Some(r) = &lib.rules {
             if resolve_rules(r) {
@@ -159,14 +157,7 @@ fn filter_artifact(
             return Ok(DLFile::new()
                 .with_url(&a.clone().url)
                 .with_hashes(DLHashes::new().sha1(a.sha1.clone().as_str()))
-                .with_path(
-                    format!(
-                        "{}/{}",
-                        destination,
-                        get_resource_name(&a.clone().url).unwrap().as_str()
-                    )
-                    .as_str(),
-                )
+                .with_path(&file)
                 .with_size(a.clone().size));
         }
     }
@@ -211,10 +202,4 @@ pub enum ClassifierError {
     NoClassifier(),
     #[error("No native classifier")]
     NoNativeClassifier()
-}
-
-fn get_resource_name(url_str: &str) -> Option<String> {
-    let url = Url::parse(url_str).ok()?;
-    let path_segments: Vec<_> = url.path_segments()?.collect();
-    path_segments.last().map(|s| s.to_string())
 }

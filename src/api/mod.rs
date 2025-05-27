@@ -1,9 +1,12 @@
-use std::{fs::File, io::Read, path::Path};
+use std::{fs::{self, File}, io::Read, path::Path};
 
-use client::Client;
+use client::{Client, Library};
 use dwldutil::{DLFile, Downloader};
+use log::warn;
 use manifest::{Manifest, Version};
 use thiserror::Error;
+
+use crate::libs::MavenLibrary;
 
 #[warn(dead_code)]
 pub mod client;
@@ -41,14 +44,48 @@ impl ApiClientUtil {
         Self::request(version, path);
         Ok(Self::rl(path)?)
     }
-    pub fn load(&self, path: &str) -> Result<Client, ApiClientError> {
+    pub fn load(&self, path: &str, tmp: &str) -> Result<Client, ApiClientError> {
         let mut file = File::open(path)?;
         let mut content = String::new();
         file.read_to_string(&mut content)?;
         let mut client: Client = serde_json::from_str(content.as_str())?;
         if let Some(inherits_from) = client.inherits_from {
-            let mut comb = self.fetch(&inherits_from, path)?;
-            comb.libraries.append(&mut client.libraries);
+            warn!("{}", inherits_from);
+            if Path::new(tmp).exists() {
+                fs::remove_file(tmp)?;
+            }
+            let mut comb = self.fetch(&inherits_from, tmp)?;
+
+            let mut ilib1 = 0;
+            for lib in client.libraries.clone().iter() {
+                let mut ilib2 = 0;
+                let mv1 = MavenLibrary::parse(lib.name.clone(), String::new());
+                for lib2 in comb.libraries.clone().iter() {
+                    let mv2 = MavenLibrary::parse(lib2.name.clone(), String::new());
+                    if mv1.artifact_id.eq(&mv2.artifact_id) && mv1.group_id.eq(&mv2.group_id) {
+                        let t: &mut Vec<Library> = comb.libraries.as_mut();
+                        t.remove(ilib2);
+                        t.push(lib.clone());
+
+                    }
+                    ilib2 += 1;
+                }
+                ilib1 += 1;
+            }
+
+            //comb.libraries.append(&mut client.libraries);
+            if let Some(args) = client.minecraft_arguments {
+                let cargs = comb.minecraft_arguments.as_ref().unwrap().clone();
+                comb.minecraft_arguments = Some(format!("{} {}", cargs, args));
+            } else {
+                let cargs = comb.arguments.as_ref().unwrap();
+                let mut game = cargs.game.clone();
+                let mut jvm = cargs.jvm.clone();
+                game.append(&mut client.arguments.as_ref().unwrap().game.clone());
+                jvm.append(&mut client.arguments.as_mut().unwrap().jvm.clone());
+
+                comb.arguments = Some(client::Arguments { game, jvm })
+            }
             comb.id = client.id;
             comb.main_class = client.main_class;
             return Ok(comb);

@@ -18,7 +18,6 @@ impl Type {
 }
 
 pub fn fetch(client: &Client, path: &str, typ: Type) -> Result<DLFile, FetchError> {
-    if Path::new(path).exists() { return Err(FetchError::PathAlredyExist(path.to_owned())) }
     Ok(typ.file(client).dl().with_path(path))
 }
 pub fn fetch_client(client: &Client, path: &str) -> Result<DLFile, FetchError> {

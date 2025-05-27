@@ -39,9 +39,6 @@ impl<'a> JavaUtil<'a> {
         }
 
         debug!("TARGET OG {}", os.name());
-        if Path::new(path).exists() {
-            return Err(FetchError::PathAlredyExist(path.to_owned()));
-        }
         let key = self.find_key(version, os);
         debug!("SEARCH KEY {}", key);
         if !self.versions.contains_key(&key.as_str()) {

@@ -5,7 +5,7 @@ use log::debug;
 use crate::{api::client::Rule, errors::FillingError, os::system::OperatingSystem};
 
 pub struct FillingUtil {
-    data: HashMap<String, String>
+    pub data: HashMap<String, String>
 }
 impl FillingUtil {
     pub fn new() -> Self {
@@ -24,15 +24,20 @@ impl FillingUtil {
         if !text.contains("${") {
             return Err(FillingError::NoPattron());
         }
-        let key_start_index = text.find("{").unwrap()+1;
-        let key_end_index = text.find("}").unwrap();
-        let key: &str = &text[key_start_index..key_end_index];
-        debug!("KEY FILL {}", key);
-        if !self.data.contains_key(key) {
-            return Err(FillingError::NoKeyFound(key.to_owned()))
+        let mut text = text;
+        loop {
+            if !text.contains("${") {
+                return Ok(text);
+            }
+            let key_start_index = text.find("{").unwrap()+1;
+            let key_end_index = text.find("}").unwrap();
+            let key: &str = &text[key_start_index..key_end_index];
+            debug!("KEY FILL {}", key);
+            if !self.data.contains_key(key) {
+                return Err(FillingError::NoKeyFound(key.to_owned()))
+            }
+            text = text.replace(format!("${{{}}}", key).as_str(), self.data.get(key).unwrap());
         }
-        let text = text.replace(format!("${{{}}}", key).as_str(), self.data.get(key).unwrap());
-        Ok(text)
     }
 }
 
