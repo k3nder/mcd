@@ -17,8 +17,19 @@ pub struct Command {
     blocking: bool,
 }
 impl Command {
-    pub fn new(client: &Client, data: HashMap<String, String>, options: HashMap<String, bool>) -> Self {
+    pub fn from_args(game: Vec<String>, jvm: Vec<String>, data: HashMap<String, String>) -> Self {
         let fill = FillingUtil::new().with_data(data);
+                Command {
+                    fill,
+                    game,
+                    jvm,
+                    stdout: |_| {},
+                    stderr: |_| {},
+                    blocking: true,
+                }
+    }
+    pub fn from_client(client: &Client, data: HashMap<String, String>, options: HashMap<String, bool>) -> Self {
+
         let mut game: Vec<String> = Vec::new();
         let mut jvm: Vec<String> = Vec::new();
 
@@ -38,15 +49,7 @@ impl Command {
                 jvm.push(String::from("${main_class}"));
             }
         }
-        Command {
-            fill,
-            game,
-            jvm,
-            stdout: |_| {},
-            stderr: |_| {},
-            blocking: true,
-        }
-
+        Self::from_args(game, jvm, data)
     }
     fn parse(arguments: &Vec<ArgumentValue>, options: &HashMap<String, bool>) -> Vec<String> {
         let mut result = Vec::new();
