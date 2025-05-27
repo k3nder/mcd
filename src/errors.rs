@@ -11,7 +11,9 @@ pub enum FetchError {
     #[error("IO error")]
     IOError(#[from] std::io::Error),
     #[error("Deserialization Error")]
-    SerdeError(#[from] serde_json::Error)
+    SerdeError(#[from] serde_json::Error),
+    #[error("Error canonicalizing path {0}")]
+    CanonicalizingError(String),
 }
 #[derive(Error, Debug)]
 pub enum FillingError {
