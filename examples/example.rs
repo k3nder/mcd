@@ -1,7 +1,7 @@
 use std::collections::HashMap;
 
 use dwldutil::Downloader;
-use log::{error, kv::ToKey};
+use log::error;
 use mcd::{
     api::ApiClientUtil, command::Command, file::fetch_client, java::JavaUtil, libs::LibsUtil,
     resource::ResourceUtil,

@@ -35,7 +35,7 @@ impl<'a> ResourceUtil<'a> {
 
         let obj_path: String = match obj_path.canonicalize() {
             Ok(path) => path.as_path().to_str().unwrap().to_owned(),
-            Err(e) => return Err(FetchError::CanonicalizingError(destination.to_owned())),
+            Err(_) => return Err(FetchError::CanonicalizingError(destination.to_owned())),
         };
         let storage = DLStorage::new(obj_path.as_str());
         let mut files = Vec::new();

@@ -42,8 +42,8 @@ impl Command {
             fill,
             game,
             jvm,
-            stdout: |f| {},
-            stderr: |f| {},
+            stdout: |_| {},
+            stderr: |_| {},
             blocking: true,
         }
 
