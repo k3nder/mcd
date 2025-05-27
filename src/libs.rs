@@ -85,7 +85,7 @@ pub fn fetch(&self,
                                 .with_url(lib.all_url().as_str())
                                 .with_path(format!("{}/{}", destination, lib.name()).as_str());
 
-            //classpath.insert(file.path.clone());
+            classpath.insert(file.path.clone());
             filtered_files.push(file);
         }
     }

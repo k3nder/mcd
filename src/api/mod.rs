@@ -56,22 +56,7 @@ impl ApiClientUtil {
             }
             let mut comb = self.fetch(&inherits_from, tmp)?;
 
-            let mut ilib1 = 0;
-            for lib in client.libraries.clone().iter() {
-                let mut ilib2 = 0;
-                let mv1 = MavenLibrary::parse(lib.name.clone(), String::new());
-                for lib2 in comb.libraries.clone().iter() {
-                    let mv2 = MavenLibrary::parse(lib2.name.clone(), String::new());
-                    if mv1.artifact_id.eq(&mv2.artifact_id) && mv1.group_id.eq(&mv2.group_id) {
-                        let t: &mut Vec<Library> = comb.libraries.as_mut();
-                        t.remove(ilib2);
-                        t.push(lib.clone());
-
-                    }
-                    ilib2 += 1;
-                }
-                ilib1 += 1;
-            }
+            comb.libraries.append(&mut client.libraries);
 
             //comb.libraries.append(&mut client.libraries);
             if let Some(args) = client.minecraft_arguments {
