@@ -1,6 +1,6 @@
 [package]
 name = "mcd"
-version = "0.2.4"
+version = "0.3.0"
 edition = "2024"
 description = "Simple mc downloader"
 authors = ["k3nder <k3nder@outlook.es>"]
@@ -9,6 +9,7 @@ license-file = "LICENSE.md"
 [dependencies]
 dwldutil = { version = "2.0.2", features = ["decompress", "normal_zip", "gzip"] }
 log = "0.4.27"
+rand = "0.9.1"
 rayon = "1.10.0"
 serde = "1.0.219"
 serde_json = "1.0.140"

@@ -1,11 +1,9 @@
 use std::collections::HashSet;
-use std::path::Path;
 
 use dwldutil::decompress::{DLDecompressionConfig, DecompressionMethod};
 use dwldutil::{DLFile, DLHashes};
 use log::{debug, warn};
 use thiserror::Error;
-use url::Url;
 
 use crate::api::client::{Client, Library, LibraryDownloads, LibraryNatives};
 use crate::errors::FetchError;

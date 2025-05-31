@@ -37,6 +37,9 @@ impl<'a> JavaUtil<'a> {
         } else if let OperatingSystem::Other = os {
             return Err(FetchError::OsUnsupported());
         }
+        if Path::new(path).exists() {
+            return Err(FetchError::PathAlredyExist(path.to_owned()));
+        }
 
         debug!("TARGET OG {}", os.name());
         let key = self.find_key(version, os);

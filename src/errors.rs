@@ -38,3 +38,9 @@ pub enum ClassifierError {
     #[error("No native classifier")]
     NoNativeClassifier()
 }
+
+#[derive(Error, Debug)]
+pub enum CommandError {
+    #[error("Error executing command")]
+    ExecError(#[from] std::io::Error)
+}

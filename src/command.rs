@@ -1,20 +1,20 @@
-use std::collections::{HashMap, HashSet};
-use std::io::{BufRead, BufReader};
-use std::process::Stdio;
+use std::collections::HashMap;
+use std::env::temp_dir;
+use std::fs::{self, File};
+use std::io::Write;
+use std::process::Child;
 
 use log::debug;
 use rayon::iter::{IntoParallelRefIterator, ParallelIterator};
 
 use crate::api::client::{ArgumentValue, Client, ComplexArgument};
+use crate::errors::CommandError;
 use crate::util::{resolve_rules_feat, FillingUtil};
 
 pub struct Command {
     pub fill: FillingUtil,
     pub game: Vec<String>,
     pub jvm: Vec<String>,
-    pub stdout: fn(String),
-    pub stderr: fn(String),
-    blocking: bool,
 }
 impl Command {
     pub fn from_args(game: Vec<String>, jvm: Vec<String>, data: HashMap<String, String>) -> Self {
@@ -23,15 +23,19 @@ impl Command {
                     fill,
                     game,
                     jvm,
-                    stdout: |_| {},
-                    stderr: |_| {},
-                    blocking: true,
                 }
     }
 
     fn build_args(&self, args: &Vec<String>) -> Vec<String> {
         args.par_iter()
-            .map(|f| self.fill.fill(f.clone()).unwrap_or(f.clone())).collect()
+            .map(|f| {
+                let mut filled = self.fill.fill(f.clone()).unwrap_or(f.clone());
+                if filled.len() >= 140 {
+                    filled.insert(0, '\"');
+                    filled.insert(filled.len(), '\"');
+                }
+                filled
+            }).collect()
     }
     pub fn build_game_args(&self) -> Vec<String> {
         Self::build_args(&self, &self.game)
@@ -39,62 +43,28 @@ impl Command {
     pub fn build_jvm_args(&self) -> Vec<String> {
         Self::build_args(&self, &self.jvm)
     }
-    pub fn stdout(mut self, stdout: fn(String)) -> Self {
-        self.stdout = stdout;
-        self
-    }
-    pub fn stderr(mut self, stderr: fn(String)) -> Self {
-        self.stderr = stderr;
-        self
-    }
-    pub fn non_block(mut self) -> Self {
-        self.blocking = false;
-        self
-    }
-    pub fn with_blocking(mut self, blocking: bool) -> Self {
-        self.blocking = blocking;
-        self
-    }
-    pub fn execute(self, java: String, jvm: Vec<String>) {
+    pub fn execute(self, java: String, jvm: Vec<String>) -> Result<Child, CommandError> {
         let mut args = self.build_jvm_args();
         let mut game = self.build_game_args();
         let mut extra = jvm.clone();
         args.append(&mut extra);
-        //args.push(self.fill.fill(String::from("${main_class}")).unwrap());
         args.append(&mut game);
 
-        debug!("JAVA: {}", java);
         debug!("{:?}", &args);
 
+        let mut temp = temp_dir();
+        temp.push(format!("command-run-{}.tmp", rand::random_range(0..20)));
+        debug!("TEMP COMMAND ARGS: {}", temp.to_str().unwrap());
+        if temp.exists() {
+            fs::remove_file(&temp).unwrap();
+        }
+        let mut file = File::create_new(temp.as_path())?;
+        file.write_all(args.join("\n").as_bytes())?;
 
         let mut java = std::process::Command::new(java);
-        let child = java.args(args);
-        let mut child = child
-                    .stdout(Stdio::piped())
-                    .stderr(Stdio::piped())
-                    .spawn()
-                    .unwrap();
-
-                //println!("run");
-                // Obtener el stdout del proceso hijo
-                let stdout = child.stdout.take().expect("Failed to capture stdout");
-                let stderr = child.stderr.take().expect("Failed to capture stderr");
-
-                // Leer la salida del proceso hijo de manera asíncrona
-                let reader = BufReader::new(stdout);
-                for line in reader.lines() {
-                    (self.stdout)(line.unwrap())
-                }
-
-                let reader = BufReader::new(stderr);
-                for line in reader.lines() {
-                    (self.stderr)(line.unwrap())
-                }
-
-                // Esperar a que el proceso hijo termine
-                if self.blocking {
-                    child.wait().unwrap();
-                }
+        let child = java.arg(format!("@{}", temp.canonicalize().unwrap().to_str().unwrap())).envs(std::env::vars()).env("JAVA_HOME", "/home/kristian/.local/share/ModrinthApp/meta/java_versions/zulu21.42.19-ca-jre21.0.7-linux_x64/");
+        Ok(child
+            .spawn()?)
     }
 }
 pub fn build_args(client: &Client, options: HashMap<String, bool>) -> (Vec<String>, Vec<String>) {

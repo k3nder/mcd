@@ -1,14 +1,11 @@
 use std::{fs::{self, File}, io::Read, path::Path};
 
-use client::{Client, Library};
+use client::Client;
 use dwldutil::{DLFile, Downloader};
 use log::warn;
 use manifest::{Manifest, Version};
 use thiserror::Error;
 
-use crate::libs::MavenLibrary;
-
-#[warn(dead_code)]
 pub mod client;
 pub mod manifest;
 pub mod assets;

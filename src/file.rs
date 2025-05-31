@@ -1,5 +1,3 @@
-use std::path::Path;
-
 use dwldutil::{DLFile, DLHashes};
 
 use crate::{api::client::{Client, JarFile}, errors::FetchError};
