@@ -94,6 +94,7 @@ fn main() -> anyhow::Result<()> {
     Command::from_args(game, jvm, data).execute(
         "/home/kristian/.local/share/ModrinthApp/meta/java_versions/zulu21.42.19-ca-jre21.0.7-linux_x64/bin/java".to_owned(),
         vec![],
+        client.java()
     )?;
 
     Ok(())
