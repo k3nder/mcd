@@ -133,7 +133,7 @@ fn file_to_args(file: &str) -> Vec<String> {
     let file = File::open(file).unwrap();
     let buf = BufReader::new(file);
     for line in buf.lines() {
-        let line = line.unwrap();
+        let line = line.unwrap().trim_matches('\"').to_owned();
         result.push(line);
     }
     debug!("FILE READED TO {:?}", result);
