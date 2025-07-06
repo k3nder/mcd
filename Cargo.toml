@@ -7,7 +7,7 @@ authors = ["k3nder <k3nder@outlook.es>"]
 license-file = "LICENSE.md"
 
 [dependencies]
-dwldutil = { version = "3.0.1", features = ["decompress", "normal_zip", "gzip", "no_static_client"] }
+dwldutil = { version = "3.0.2", features = ["decompress", "normal_zip", "gzip", "no_static_client"] }
 rayon = { version = "1.10.0", default-features = false } 
 serde = { version = "1.0.219", default-features = false }
 serde_json = { version = "1.0.140", default-features = false }
