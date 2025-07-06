@@ -8,12 +8,12 @@ license-file = "LICENSE.md"
 
 [dependencies]
 dwldutil = { version = "3.0.1", features = ["decompress", "normal_zip", "gzip", "no_static_client"] }
-rayon = "1.10.0"
-serde = "1.0.219"
-serde_json = "1.0.140"
+rayon = { version = "1.10.0", default-features = false } 
+serde = { version = "1.0.219", default-features = false }
+serde_json = { version = "1.0.140", default-features = false }
 thiserror = "2.0.12"
 tracing = "0.1.41"
-url = "2.5.4"
+url = { version = "2.5.4", default-features = false }
 
 [dev-dependencies]
 anyhow = "1.0.98"
