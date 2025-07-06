@@ -1,14 +1,8 @@
 use std::collections::HashMap;
-use std::env::temp_dir;
-use std::fs::{self, File};
-use std::io::{BufRead, BufReader, Write};
-use std::process::Child;
 
 use rayon::iter::{IntoParallelRefIterator, ParallelIterator};
-use tracing::debug;
 
 use crate::api::client::{ArgumentValue, Client, ComplexArgument};
-use crate::errors::CommandError;
 use crate::util::{FillingUtil, resolve_rules_feat};
 
 pub struct Command {
@@ -40,42 +34,13 @@ impl Command {
     pub fn build_jvm_args(&self) -> Vec<String> {
         Self::build_args(&self, &self.jvm)
     }
-    pub fn execute(
-        self,
-        java: String,
-        jvm: Vec<String>,
-        java_version: usize,
-    ) -> Result<Child, CommandError> {
+    pub fn build(&self, extra: Vec<String>) -> Vec<String> {
         let mut args = self.build_jvm_args();
         let mut game = self.build_game_args();
-        let mut extra = jvm.clone();
+        let mut extra = extra.clone();
         args.append(&mut extra);
         args.append(&mut game);
-
-        debug!("{:?}", &args);
-
-        let mut temp = temp_dir();
-        temp.push(format!("command-run-{}.tmp", rand::random_range(0..20)));
-        debug!("TEMP COMMAND ARGS: {}", temp.to_str().unwrap());
-        if temp.exists() {
-            fs::remove_file(&temp).unwrap();
-        }
-        let mut file = File::create_new(temp.as_path())?;
-        file.write_all(args.join("\n").as_bytes())?;
-
-        let mut java = std::process::Command::new(java);
-
-        let args = if java_version == 8 {
-            file_to_args(temp.to_str().unwrap())
-        } else {
-            vec![format!(
-                "@{}",
-                temp.canonicalize().unwrap().to_str().unwrap()
-            )]
-        };
-
-        let child = java.args(args).envs(std::env::vars()).env("JAVA_HOME", "/home/kristian/.local/share/ModrinthApp/meta/java_versions/zulu21.42.19-ca-jre21.0.7-linux_x64/");
-        Ok(child.spawn()?)
+        args
     }
 }
 pub fn build_args(client: &Client, options: HashMap<String, bool>) -> (Vec<String>, Vec<String>) {
@@ -133,15 +98,4 @@ fn resolve_complex(
     }
 
     Some(result)
-}
-fn file_to_args(file: &str) -> Vec<String> {
-    let mut result = Vec::new();
-    let file = File::open(file).unwrap();
-    let buf = BufReader::new(file);
-    for line in buf.lines() {
-        let line = line.unwrap().trim_matches('\"').to_owned();
-        result.push(line);
-    }
-    debug!("FILE READED TO {:?}", result);
-    result
 }
