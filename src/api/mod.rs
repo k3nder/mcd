@@ -10,6 +10,8 @@ use manifest::{Manifest, Version};
 use thiserror::Error;
 use tracing::warn;
 
+use crate::log_indicator;
+
 pub mod assets;
 pub mod client;
 pub mod manifest;
@@ -25,7 +27,7 @@ impl ApiClientUtil {
             let file = DLFile::new()
                 .with_url(MANIFEST_URL)
                 .with_path(manifest_path);
-            let downloader = Downloader::new().add_file(file);
+            let downloader = Downloader::<log_indicator::LogIndicator>::new().add_file(file);
             downloader.start();
         }
         let mut str = String::new();
@@ -80,7 +82,9 @@ impl ApiClientUtil {
     }
     fn request(version: &Version, path: &str) {
         let file = DLFile::new().with_url(&version.url).with_path(path);
-        Downloader::new().add_file(file).start();
+        Downloader::<log_indicator::LogIndicator>::new()
+            .add_file(file)
+            .start();
     }
     fn rl(path: &str) -> Result<Client, std::io::Error> {
         let mut str = String::new();

@@ -7,7 +7,7 @@ authors = ["k3nder <k3nder@outlook.es>"]
 license-file = "LICENSE.md"
 
 [dependencies]
-dwldutil = { version = "=2.0.4-b", features = ["decompress", "normal_zip", "gzip", "no_static_client"] }
+dwldutil = { version = "3.0.1", features = ["decompress", "normal_zip", "gzip", "no_static_client"] }
 rand = "0.9.1"
 rayon = "1.10.0"
 serde = "1.0.219"
@@ -19,3 +19,4 @@ url = "2.5.4"
 [dev-dependencies]
 anyhow = "1.0.98"
 tracing-subscriber = { version = "0.3.19", features = ["env-filter"] }
+dwldutil = { version = "3.0.1", features = ["indicatif_indicator"] }

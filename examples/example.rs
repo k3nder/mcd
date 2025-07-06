@@ -69,7 +69,7 @@ fn main() -> anyhow::Result<()> {
     //                    Err(e) => error!("{}", e),
     //}
     println!("DDDDD");
-    Downloader::new()
+    Downloader::<dwldutil::indicator::indicatif::Indicatif>::new()
         .with_max_redirections(30)
         .with_max_concurrent_downloads(1)
         .with_files(files)
