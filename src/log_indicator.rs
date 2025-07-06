@@ -6,6 +6,7 @@ pub struct LogIndicator;
 impl IndicatorFactory for LogIndicator {
     fn create_task(&self, name: &str, size: u64) -> impl Indicator {
         debug!("Starting download of {} with {}b", name, size);
+        let size = if size == 0 { 100 } else { size };
         LogIndicatorChild {
             file: name.to_string(),
             total: size,
