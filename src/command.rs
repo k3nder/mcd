@@ -4,12 +4,12 @@ use std::fs::{self, File};
 use std::io::{BufRead, BufReader, Write};
 use std::process::Child;
 
-use log::debug;
 use rayon::iter::{IntoParallelRefIterator, ParallelIterator};
+use tracing::debug;
 
 use crate::api::client::{ArgumentValue, Client, ComplexArgument};
 use crate::errors::CommandError;
-use crate::util::{resolve_rules_feat, FillingUtil};
+use crate::util::{FillingUtil, resolve_rules_feat};
 
 pub struct Command {
     pub fill: FillingUtil,
@@ -19,11 +19,7 @@ pub struct Command {
 impl Command {
     pub fn from_args(game: Vec<String>, jvm: Vec<String>, data: HashMap<String, String>) -> Self {
         let fill = FillingUtil::new().with_data(data);
-                Command {
-                    fill,
-                    game,
-                    jvm,
-                }
+        Command { fill, game, jvm }
     }
 
     fn build_args(&self, args: &Vec<String>) -> Vec<String> {
@@ -35,7 +31,8 @@ impl Command {
                     filled.insert(filled.len(), '\"');
                 }
                 filled
-            }).collect()
+            })
+            .collect()
     }
     pub fn build_game_args(&self) -> Vec<String> {
         Self::build_args(&self, &self.game)
@@ -43,7 +40,12 @@ impl Command {
     pub fn build_jvm_args(&self) -> Vec<String> {
         Self::build_args(&self, &self.jvm)
     }
-    pub fn execute(self, java: String, jvm: Vec<String>, java_version: usize) -> Result<Child, CommandError> {
+    pub fn execute(
+        self,
+        java: String,
+        jvm: Vec<String>,
+        java_version: usize,
+    ) -> Result<Child, CommandError> {
         let mut args = self.build_jvm_args();
         let mut game = self.build_game_args();
         let mut extra = jvm.clone();
@@ -66,16 +68,17 @@ impl Command {
         let args = if java_version == 8 {
             file_to_args(temp.to_str().unwrap())
         } else {
-            vec![format!("@{}", temp.canonicalize().unwrap().to_str().unwrap())]
+            vec![format!(
+                "@{}",
+                temp.canonicalize().unwrap().to_str().unwrap()
+            )]
         };
 
         let child = java.args(args).envs(std::env::vars()).env("JAVA_HOME", "/home/kristian/.local/share/ModrinthApp/meta/java_versions/zulu21.42.19-ca-jre21.0.7-linux_x64/");
-        Ok(child
-            .spawn()?)
+        Ok(child.spawn()?)
     }
 }
 pub fn build_args(client: &Client, options: HashMap<String, bool>) -> (Vec<String>, Vec<String>) {
-
     let mut game: Vec<String> = Vec::new();
     let mut jvm: Vec<String> = Vec::new();
 
@@ -99,35 +102,38 @@ pub fn build_args(client: &Client, options: HashMap<String, bool>) -> (Vec<Strin
     (game, jvm)
 }
 fn parse(arguments: &Vec<ArgumentValue>, options: &HashMap<String, bool>) -> Vec<String> {
-        let mut result = Vec::new();
+    let mut result = Vec::new();
 
-        for arg in arguments {
-            match arg {
-                ArgumentValue::Plain(str) => result.push(str.to_owned()),
-                ArgumentValue::Complex(complex_argument) => {
-                    if let Some(args) = resolve_complex(complex_argument, options) {
-                        let mut args: Vec<String> = args.clone().iter().map(|f| f.to_owned()).collect();
-                        result.append(&mut args);
-                    }
-                },
+    for arg in arguments {
+        match arg {
+            ArgumentValue::Plain(str) => result.push(str.to_owned()),
+            ArgumentValue::Complex(complex_argument) => {
+                if let Some(args) = resolve_complex(complex_argument, options) {
+                    let mut args: Vec<String> = args.clone().iter().map(|f| f.to_owned()).collect();
+                    result.append(&mut args);
+                }
             }
         }
-
-        result
     }
-    fn resolve_complex(complex: &ComplexArgument, options: &HashMap<String, bool>) -> Option<Vec<String>> {
-        if !resolve_rules_feat(&complex.rules, options) {
-            return None;
-        }
-        let mut result = Vec::new();
 
-        match &complex.value {
-            crate::api::client::ValueField::Single(str) => result.push(str.to_owned()),
-            crate::api::client::ValueField::Multiple(items) => result.append(&mut items.clone()),
-        }
-
-        Some(result)
+    result
+}
+fn resolve_complex(
+    complex: &ComplexArgument,
+    options: &HashMap<String, bool>,
+) -> Option<Vec<String>> {
+    if !resolve_rules_feat(&complex.rules, options) {
+        return None;
     }
+    let mut result = Vec::new();
+
+    match &complex.value {
+        crate::api::client::ValueField::Single(str) => result.push(str.to_owned()),
+        crate::api::client::ValueField::Multiple(items) => result.append(&mut items.clone()),
+    }
+
+    Some(result)
+}
 fn file_to_args(file: &str) -> Vec<String> {
     let mut result = Vec::new();
     let file = File::open(file).unwrap();
