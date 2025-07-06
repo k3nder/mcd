@@ -68,7 +68,6 @@ fn main() -> anyhow::Result<()> {
     //                    Err(mcd::errors::FetchError::PathAlredyExist(_)) => {}
     //                    Err(e) => error!("{}", e),
     //}
-    println!("DDDDD");
     Downloader::<dwldutil::indicator::indicatif::Indicatif>::new()
         .with_max_redirections(30)
         .with_max_concurrent_downloads(1)

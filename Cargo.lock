@@ -1467,7 +1467,7 @@ dependencies = [
 
 [[package]]
 name = "mcd"
-version = "0.3.2-b"
+version = "0.3.3"
 dependencies = [
  "anyhow",
  "dwldutil",

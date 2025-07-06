@@ -1,6 +1,6 @@
 [package]
 name = "mcd"
-version = "0.3.2-b"
+version = "0.3.3"
 edition = "2024"
 description = "Simple mc downloader"
 authors = ["k3nder <k3nder@outlook.es>"]
