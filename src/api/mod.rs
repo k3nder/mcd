@@ -1,4 +1,8 @@
-use std::{fs::{self, File}, io::Read, path::Path};
+use std::{
+    fs::{self, File},
+    io::Read,
+    path::Path,
+};
 
 use client::Client;
 use dwldutil::{DLFile, Downloader};
@@ -6,9 +10,11 @@ use log::warn;
 use manifest::{Manifest, Version};
 use thiserror::Error;
 
+use crate::log_indicator;
+
+pub mod assets;
 pub mod client;
 pub mod manifest;
-pub mod assets;
 
 pub const MANIFEST_URL: &str = "https://launchermeta.mojang.com/mc/game/version_manifest.json";
 
@@ -21,7 +27,7 @@ impl ApiClientUtil {
             let file = DLFile::new()
                 .with_url(MANIFEST_URL)
                 .with_path(manifest_path);
-            let downloader = Downloader::new().add_file(file);
+            let downloader = Downloader::<log_indicator::LogIndicator>::new().add_file(file);
             downloader.start();
         }
         let mut str = String::new();
@@ -31,7 +37,7 @@ impl ApiClientUtil {
     }
     pub fn fetch(&self, version: &str, path: &str) -> Result<Client, ApiClientError> {
         if Path::new(path).exists() {
-            return Ok(Self::rl(path)?)
+            return Ok(Self::rl(path)?);
         }
         let version = if let Some(version) = self.manifest.get(version) {
             version
@@ -76,7 +82,9 @@ impl ApiClientUtil {
     }
     fn request(version: &Version, path: &str) {
         let file = DLFile::new().with_url(&version.url).with_path(path);
-        Downloader::new().add_file(file).start();
+        Downloader::<log_indicator::LogIndicator>::new()
+            .add_file(file)
+            .start();
     }
     fn rl(path: &str) -> Result<Client, std::io::Error> {
         let mut str = String::new();
