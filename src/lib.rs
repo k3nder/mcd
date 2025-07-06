@@ -1,9 +1,10 @@
-pub mod java;
 pub mod api;
-pub mod file;
-pub mod libs;
-pub mod resource;
 pub mod command;
 pub mod errors;
-pub mod util;
+pub mod file;
+pub mod java;
+pub mod libs;
+pub(crate) mod log_indicator;
 pub(crate) mod os;
+pub mod resource;
+pub mod util;
