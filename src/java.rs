@@ -4,7 +4,7 @@ use dwldutil::{
     DLFile, DLHashes,
     decompress::{DLDecompressionConfig, DecompressionMethod},
 };
-use log::debug;
+use tracing::debug;
 
 use crate::{errors::FetchError, os::system::OperatingSystem};
 
@@ -48,32 +48,36 @@ impl<'a> JavaUtil<'a> {
             return Err(FetchError::UrlNotFound(version.to_string()));
         }
         let (_, url, sha256, size, compression) = self.versions.get(key.as_str()).unwrap();
-        Ok(
-            DLFile::new()
-                .with_url(url)
-                .with_path(&format!("{}.tmp", path))
-                .with_hashes(DLHashes::new().sha256(sha256))
-                .with_size(*size as u64)
-                .with_decompression_config(
-                    DLDecompressionConfig::new(
-                        {
-                            match compression {
-                                DecompressionMethod::TarGzip => DecompressionMethod::TarGzip,
-                                DecompressionMethod::Zip => DecompressionMethod::Zip,
-                            }
-                        },
-                        path,
-                    )
-                    .delete_after(),
-                ),
-        )
+        Ok(DLFile::new()
+            .with_url(url)
+            .with_path(&format!("{}.tmp", path))
+            .with_hashes(DLHashes::new().sha256(sha256))
+            .with_size(*size as u64)
+            .with_decompression_config(
+                DLDecompressionConfig::new(
+                    {
+                        match compression {
+                            DecompressionMethod::TarGzip => DecompressionMethod::TarGzip,
+                            DecompressionMethod::Zip => DecompressionMethod::Zip,
+                        }
+                    },
+                    path,
+                )
+                .delete_after(),
+            ))
     }
     pub fn id_of(&self, version: usize) -> Option<String> {
         let key = self.find_key(version, OperatingSystem::detect());
         if !self.versions.contains_key(key.clone().as_str()) {
             return None;
         }
-        Some(self.versions.get(key.clone().as_str()).unwrap().0.to_owned())
+        Some(
+            self.versions
+                .get(key.clone().as_str())
+                .unwrap()
+                .0
+                .to_owned(),
+        )
     }
     fn find_key(&self, version: usize, os: OperatingSystem) -> String {
         let key = format!(

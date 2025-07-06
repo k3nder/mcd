@@ -1,14 +1,18 @@
-use std::{fs::{self, File}, io::Read, path::Path};
+use std::{
+    fs::{self, File},
+    io::Read,
+    path::Path,
+};
 
 use client::Client;
 use dwldutil::{DLFile, Downloader};
-use log::warn;
 use manifest::{Manifest, Version};
 use thiserror::Error;
+use tracing::warn;
 
+pub mod assets;
 pub mod client;
 pub mod manifest;
-pub mod assets;
 
 pub const MANIFEST_URL: &str = "https://launchermeta.mojang.com/mc/game/version_manifest.json";
 
@@ -31,7 +35,7 @@ impl ApiClientUtil {
     }
     pub fn fetch(&self, version: &str, path: &str) -> Result<Client, ApiClientError> {
         if Path::new(path).exists() {
-            return Ok(Self::rl(path)?)
+            return Ok(Self::rl(path)?);
         }
         let version = if let Some(version) = self.manifest.get(version) {
             version
