@@ -35,6 +35,7 @@ impl Indicator for LogIndicatorChild {
             IndicateSignal::Success() => {
                 debug!("FILE {} DOWNLOAD SUCCESS", self.file);
             }
+            IndicateSignal::Start() => {}
         }
     }
 }
