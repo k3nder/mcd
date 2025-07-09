@@ -697,9 +697,9 @@ dependencies = [
 
 [[package]]
 name = "dwldutil"
-version = "3.0.2"
+version = "3.0.3"
 source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "f764027628c19b02af3b20b47f5ee4087b58c5a5433378bb088c307994e75c3e"
+checksum = "206e6c12075b994d031bb6dff104d84caacb55335a4bc2ccd129a12f063698f9"
 dependencies = [
  "flate2",
  "futures",
